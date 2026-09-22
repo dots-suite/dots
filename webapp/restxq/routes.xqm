@@ -124,7 +124,7 @@ declare
   %rest:query-param("start", "{$start}", "")
   %rest:query-param("end", "{$end}", "")
   %rest:query-param("tree", "{$tree}", "")
-  %rest:query-param("down", "{$down}", "-2")
+  %rest:query-param("down", "{$down}", -2)
   %rest:query-param("filter", "{$filter}", "")
 function routes:navigation(
   $resource as xs:string,
