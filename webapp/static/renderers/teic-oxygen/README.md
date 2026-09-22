@@ -22,6 +22,14 @@ This renderer displays TEI documents natively (as XML) with the visual styling p
    cp renderer_config_template.xml renderer_config.xml
    ```
 
+
+3. **Uncomment the corresponding line** in `renderer_config.xml` to enable TEI/XML output:
+
+```xml
+   <dots:renderer name="teic-oxygen" mediaType="tei" path="tei.css"/>
+```
+
 ## That's it
 
-Once `tei.css` is in place and `renderer_config.xml` exists, the TEI renderer is picked up automatically — no further configuration is needed. DoTS resolves the stylesheet path through `renderer_config.xml` and injects the corresponding `xml-stylesheet` processing instruction when this renderer is requested.
+Once `tei.css` is in place, `renderer_config.xml` exists, and the relevant renderer line is uncommented, the TEI renderer is picked up automatically — no further configuration is needed. DoTS resolves the stylesheet path through `renderer_config.xml` and injects the corresponding `xml-stylesheet` processing instruction when this renderer is requested.
+
