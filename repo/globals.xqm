@@ -19,35 +19,83 @@ declare variable $G:base_uri :=
   then environment-variable("base_uri")
   else substring-before(request:uri(), "/api");
 
+(:~ Garantit un séparateur final. :)
+declare %private function G:dir($path as xs:string) as xs:string {
+  if (ends-with($path, "/") or ends-with($path, file:dir-separator()))
+  then $path
+  else concat($path, file:dir-separator())
+};
+
 (:~ Variable pour accéder aux feuilles de transformation XSLT :)
-declare function G:linkToRenderer() {
-  concat($G:webapp, "webapp/static/renderers/")
-};
-
-declare function G:linkToTransform() {
-  let $specificLink := db:get($G:dots)//settings/linkXSL
+declare function G:linkToRenderer() as xs:string {
+  let $custom := normalize-space(environment-variable("DOTS_RENDERERS_DIR"))
   return
-    if ($specificLink != "")
-    then if (ends-with($specificLink, "/")) then $specificLink else concat($specificLink, "/")
-    else 
-      if (environment-variable("transform_path"))
-      then environment-variable("transform_path")
-      else concat($G:webapp, "webapp/static/transform/")
+    if ($custom = "")
+    then concat(G:dir($G:webapp), "webapp/static/renderers/")
+    else if (file:is-dir($custom))
+    then G:dir($custom)
+    else error(
+      xs:QName("G:invalid-renderers-dir"),
+      concat("DOTS_RENDERERS_DIR pointe vers un dossier inexistant : ", $custom)
+    )
 };
 
-declare function G:defaultXslEnginePath() {
-  let $defaultEngine := db:get($G:dots)//settings/defaultEngine
+declare function G:linkToTransform() as xs:string {
+  let $custom := normalize-space(environment-variable("DOTS_TRANSFORM_DIR"))
   return
-    if ($defaultEngine != "") 
-    then normalize-space($defaultEngine) 
-    else 
-      if (environment-variable("xsl_path"))
-      then environment-variable("xsl_path")
-      else concat(G:linkToRenderer(), "html/teic/teic.xsl")
+    if ($custom = "")
+    then concat(G:dir($G:webapp), "webapp/static/transform/")
+    else if (file:is-dir($custom))
+    then G:dir($custom)
+    else error(
+      xs:QName("G:invalid-transform-dir"),
+      concat("DOTS_TRANSFORM_DIR pointe vers un dossier inexistant : ", $custom)
+    )
 };
-(: "hteiml/tei2html.xsl" :)
 
-(: declare variable $G:defaultXslEnginePath := "hteiml/tei2html.xsl"; :)
+declare function G:rendererConfig() as document-node() {
+  let $config := concat(G:linkToRenderer(), "renderer_config.xml")
+  return
+    if (not(file:is-file($config)))
+    then error(
+      xs:QName("G:missing-renderer-config"),
+      concat("renderer_config.xml introuvable : ", $config)
+    )
+    else
+      try { doc(file:path-to-uri($config)) }
+      catch * {
+        error(
+          xs:QName("G:invalid-renderer-config"),
+          concat("renderer_config.xml illisible (", $config, ") : ", $err:description)
+        )
+      }
+};
+
+declare function G:rendererXslPath($renderer as element(renderer)) as xs:string {
+  let $xsl := concat(
+    G:linkToRenderer(),
+    normalize-space($renderer/@name), "/",
+    normalize-space($renderer/@path)
+  )
+  return
+    if (file:is-file($xsl)) then $xsl
+    else error(
+      xs:QName("G:invalid-renderer-path"),
+      concat("XSL du renderer « ", $renderer/@name, " » introuvable : ", $xsl)
+    )
+};
+
+declare function G:defaultXslEnginePath() as xs:string {
+  let $defaults := G:rendererConfig()//renderer[@mediaType = "html"][@default = "true"]
+  return
+    if (count($defaults) = 1)
+    then G:rendererXslPath($defaults)
+    else error(
+      xs:QName("G:invalid-renderer-default"),
+      concat("renderer_config.xml doit déclarer exactement un renderer html par défaut (trouvés : ",
+             count($defaults), ")")
+    )
+};
 
 (: ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Variables pour le DoTS Project Manager 
