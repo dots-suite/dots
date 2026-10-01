@@ -236,7 +236,7 @@ function routes:document(
             (
               <rest:response>
                 <http:response status="200">
-                  <http:header name="Content-Type" value="{concat($f, ' charset=utf-8')}"/>
+                  <http:header name="Content-Type" value="{concat($f, '; charset=utf-8')}"/>
                   {if ($media-type = 'application/tei+xml') then <http:header name="Accept" value="application/tei+xml"/>}
                 </http:response>
               </rest:response>,

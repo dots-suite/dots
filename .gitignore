@@ -11,8 +11,7 @@
 /webapp/restxq/ladam_test.xqm
 /webapp/restxq/assets.xqm
 
-/webapp/static/img/
-/webapp/static/transform/
+/webapp/static/*
 
 # Tout ignorer par défaut dans renderers/
 /webapp/static/renderers/*
