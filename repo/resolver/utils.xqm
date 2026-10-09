@@ -605,22 +605,25 @@ declare function utils:excludeFragments(
   return
     <TEI xmlns="http://www.tei-c.org/ns/1.0">
     <dts:wrapper xmlns:dts="https://w3id.org/dts/api#">{
-      let $childs :=
-        for $child in $node/node()
-        let $id := $child/@xml:id
+      element { node-name($node) } {
+        $node/@*,
+        let $childs :=
+          for $child in $node/node()
+          let $id := $child/@xml:id
+          return
+            if ($id)
+            then 
+              let $node-id := db:node-id($child)
+              let $frag := db:attribute($project, normalize-space($node-id))/parent::dots:fragment
+              return
+                if ($frag)
+                then 
+                  ()
+                else $child
+            else $child
         return
-          if ($id)
-          then 
-            let $node-id := db:node-id($child)
-            let $frag := db:attribute($project, normalize-space($node-id))/parent::dots:fragment
-            return
-              if ($frag)
-              then 
-                ()
-              else $child
-          else $child
-      return
-        $childs
+          $childs
+        }
   }</dts:wrapper>
   </TEI>
 };
